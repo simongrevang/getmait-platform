@@ -51,11 +51,11 @@ const App = () => {
 
         // Hent menu items fra Supabase
         const { data: menuData, error: menuError } = await supabase
-          .from('menu_items')
+          .from('menu')
           .select('*')
           .eq('store_id', storeData.id)
-          .eq('active', true)
-          .order('category', { ascending: true })
+          .eq('tilgaengelig', true)
+          .order('kategori', { ascending: true })
           .order('pris', { ascending: true });
 
         if (menuError) {
@@ -99,11 +99,11 @@ const App = () => {
   );
 
   const brandColor = store?.primary_color || '#ea580c';
-  const filteredMenu = activeCategory === 'all' ? menu : menu.filter(item => item.category === activeCategory);
+  const filteredMenu = activeCategory === 'all' ? menu : menu.filter(item => item.kategori === activeCategory);
   const displayedItems = isMenuExpanded ? filteredMenu : filteredMenu.slice(0, 4);
 
   // Find unikke kategorier
-  const categories = [...new Set(menu.map(item => item.category))];
+  const categories = [...new Set(menu.map(item => item.kategori))];
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans selection:bg-orange-100 overflow-x-hidden text-left">
@@ -178,7 +178,7 @@ const App = () => {
           <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-8 text-left">
             <div className="text-left">
               <h2 className="text-5xl font-black italic-caps mb-2 text-left tracking-tighter">Menukortet</h2>
-              <p className="text-slate-400 font-medium italic text-left leading-relaxed">Håndplukket menu fra {store.name} i {store.location}.</p>
+              <p className="text-slate-400 font-medium italic text-left leading-relaxed">Håndplukket menu fra {store.name} i {store.city || 'Danmark'}.</p>
             </div>
             <div className="flex flex-wrap gap-3 text-left">
               <button
@@ -215,7 +215,7 @@ const App = () => {
                     <div className="max-w-[70%] text-left">
                       <div className="flex items-center gap-2 mb-1">
                          <h3 className="font-black text-2xl italic-caps text-slate-800 group-hover:text-orange-600 transition-colors text-left">{item.navn}</h3>
-                         {item.featured && <Star size={14} className="text-orange-400 fill-orange-400" />}
+                         {item.is_popular && <Star size={14} className="text-orange-400 fill-orange-400" />}
                       </div>
                       <p className="text-slate-400 text-sm italic font-medium leading-relaxed text-left">{item.beskrivelse}</p>
                     </div>
