@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Pizza, MessageSquare, Phone, MapPin, Clock, ChevronRight, Zap, AlertCircle, Volume2, ChevronDown, ChevronUp, Beer, Utensils, Star, ShieldCheck, Sparkles } from 'lucide-react';
 import { supabase } from './lib/supabase';
+import ChatWidget from './ChatWidget';
 
 /**
  * GETMAIT PLATFORM - PUNCHY HEADLINE EDITION
@@ -20,11 +21,22 @@ const App = () => {
     const loadData = async () => {
       // Extract slug from hostname (subdomain eller domæne)
       const hostname = window.location.hostname;
-      const slug = hostname.includes('sslip.io')
-        ? hostname.split('.')[0]
-        : hostname.includes('localhost')
-        ? 'napoli-esbjerg'
-        : hostname.split('.')[0];
+      const isIpAddress = /^(\d{1,3}\.){3}\d{1,3}$/.test(hostname);
+
+      let slug;
+      if (hostname.includes('getmait.dk')) {
+        // Extract subdomain from *.getmait.dk (e.g., napoli-pizza.getmait.dk -> napoli-pizza)
+        slug = hostname.split('.getmait.dk')[0];
+      } else if (hostname.includes('sslip.io')) {
+        // Extract subdomain from sslip.io
+        slug = hostname.split('.')[0];
+      } else if (hostname.includes('localhost') || isIpAddress) {
+        // Default for localhost and IP addresses
+        slug = 'napoli-esbjerg';
+      } else {
+        // Fallback: extract first part
+        slug = hostname.split('.')[0];
+      }
 
       try {
         // Hent butiksinformation fra Supabase
@@ -307,6 +319,9 @@ const App = () => {
           </div>
         </div>
       </footer>
+
+      {/* GetMait AI Chat Widget */}
+      <ChatWidget />
     </div>
   );
 };
