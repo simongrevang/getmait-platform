@@ -316,6 +316,18 @@ const App = () => {
             <div className="text-slate-700 text-[8px] font-bold uppercase text-center italic tracking-widest">
               CVR: {store.cvr_number} • © 2026 {store.name} • Professional Automation
             </div>
+            {store.smiley_url && (
+              <div className="mt-4">
+                <a
+                  href={store.smiley_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-slate-500 text-[9px] font-black uppercase tracking-widest hover:text-orange-600 transition-colors"
+                >
+                  <ShieldCheck size={12} /> Se kontrolrapport
+                </a>
+              </div>
+            )}
           </div>
         </div>
       </footer>
