@@ -127,6 +127,13 @@ const ChatWidget = () => {
     setIsLoading(true);
 
     try {
+      // Generer eller hent session ID fra sessionStorage (persisterer per browser session)
+      let sessionId = sessionStorage.getItem(`getmait_session_${store.id}`);
+      if (!sessionId) {
+        sessionId = `${store.id}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        sessionStorage.setItem(`getmait_session_${store.id}`, sessionId);
+      }
+
       // Send til n8n webhook med store_id
       const response = await fetch(N8N_CHAT_WEBHOOK, {
         method: 'POST',
@@ -138,6 +145,7 @@ const ChatWidget = () => {
           store_id: store.id,        // VIGTIGT: Så n8n ved hvilken restaurant
           store_name: store.name,     // Ekstra kontekst
           source: 'web_chat',         // Kilde-identifikation
+          sessionId: sessionId,       // Session ID til chat memory (n8n Simple Memory node)
           timestamp: new Date().toISOString()
         }),
       });
