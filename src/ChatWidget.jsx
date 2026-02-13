@@ -11,17 +11,17 @@ import { MessageSquare, X, Send, Utensils, Sparkles, Phone, MessageCircle, Alert
  * 4. Anvend branding (primary_color, name, phone)
  * 5. Send beskeder til n8n med store_id
  *
- * VIGTIGT: Sæt environment variables i din .env fil:
- * - VITE_SUPABASE_URL
- * - VITE_SUPABASE_ANON_KEY
- * - VITE_N8N_CHAT_WEBHOOK
+ * KONFIGURATION:
+ * - API endpoints er hardcoded for production stability
+ * - Webhook URL: https://n8n.getmait.dk/webhook/getmait-chat
+ * - Supabase URL: https://supabase.getmait.dk
  */
 
 const ChatWidget = () => {
-  // --- KONFIGURATION (Hentes fra environment variables) ---
-  const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-  const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
-  const N8N_CHAT_WEBHOOK = import.meta.env.VITE_N8N_CHAT_WEBHOOK;
+  // --- KONFIGURATION (Hardcoded for production stability) ---
+  const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://supabase.getmait.dk";
+  const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZSIsImlhdCI6MTc3MDI4NjgwMCwiZXhwIjo0OTI1OTYwNDAwLCJyb2xlIjoiYW5vbiJ9.Lshy9-QNUcZhFol6_zI6yinhWak7nmkd03rMs94-viE";
+  const N8N_CHAT_WEBHOOK = "https://n8n.getmait.dk/webhook/getmait-chat";
 
   // --- STATE ---
   const [isOpen, setIsOpen] = useState(false);
