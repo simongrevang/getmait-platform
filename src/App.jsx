@@ -39,6 +39,12 @@ const App = () => {
       }
 
       try {
+        if (!supabase) {
+          setError('Manglende Supabase-konfiguration. Tjek VITE_SUPABASE_URL og VITE_SUPABASE_ANON_KEY.');
+          setLoading(false);
+          return;
+        }
+
         // Hent butiksinformation fra Supabase
         const { data: storeData, error: storeError } = await supabase
           .from('stores')
