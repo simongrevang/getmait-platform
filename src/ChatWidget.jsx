@@ -159,7 +159,7 @@ const ChatWidget = () => {
       // Tilføj n8n's svar til chat
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: data.output || data.message || "Modtaget! Jeg sender din bestilling til køkkenet nu."
+        content: data.reply || data.output || data.message || "Modtaget! Jeg sender din bestilling til køkkenet nu."
       }]);
     } catch (error) {
       console.error('[GetMait Widget] Error sending message:', error);
