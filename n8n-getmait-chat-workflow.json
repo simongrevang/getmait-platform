@@ -1,0 +1,209 @@
+{
+  "name": "GetMait Chat Handler",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "getmait-chat",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-node",
+      "name": "Webhook - GetMait Chat",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "getmait-chat"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.VITE_SUPABASE_URL }}/rest/v1/menu",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "store_id",
+              "value": "=eq.{{ $json.store_id }}"
+            },
+            {
+              "name": "tilgaengelig",
+              "value": "eq.true"
+            },
+            {
+              "name": "select",
+              "value": "id,navn,pris,beskrivelse,kategori"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "fetch-menu",
+      "name": "Fetch Menu from Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-credentials",
+          "name": "Supabase API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "menu-json",
+              "name": "menu_json",
+              "value": "={{ JSON.stringify($json) }}",
+              "type": "string"
+            },
+            {
+              "id": "user-message",
+              "name": "user_message",
+              "value": "={{ $('Webhook - GetMait Chat').item.json.message }}",
+              "type": "string"
+            },
+            {
+              "id": "store-name",
+              "name": "store_name",
+              "value": "={{ $('Webhook - GetMait Chat').item.json.store_name }}",
+              "type": "string"
+            },
+            {
+              "id": "store-id",
+              "name": "store_id",
+              "value": "={{ $('Webhook - GetMait Chat').item.json.store_id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "prepare-ai-context",
+      "name": "Prepare AI Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "content": "=# GETMAIT AI PROMPT\n\n## Din Rolle\nDu er \"Mait\" - en uformel, hjælpsom og personlig AI-tjener for {{ $json.store_name }}.\n\n## Din Opgave\n1. **Forstå kundens bestilling** - Hvad vil de have?\n2. **Find retter fra menuen** - Match med tilgængelige items\n3. **Bekræft priser** - Vær klar og præcis\n4. **Saml bestillingen** - Sammenfat hvad de får\n5. **Spørg om leveringsadresse** hvis relevant\n\n## Tone of Voice\n- Venlig og uformel (brug \"Mait\" i stedet for \"du\")\n- Brug dansk slang når det passer\n- Vær entusiastisk om maden! 🍕\n- Hold svarene korte og konkrete\n\n## Menu (JSON format)\n```json\n{{ $json.menu_json }}\n```\n\n## Kunde besked\n{{ $json.user_message }}\n\n## Dit svar\nSvar venligst på kundens besked. Hvis de vil bestille noget:\n1. Find det på menuen\n2. Bekræft pris\n3. Spørg om detaljer (størrelse, tilbehør, leveringsadresse)\n\nHvis menuen ikke har det de beder om, foreslå alternativer.",
+        "height": 464.4235294117647,
+        "width": 450.74509803921575
+      },
+      "id": "ai-prompt-note",
+      "name": "Note - AI Prompt Template",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [900, 80]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "test-response",
+              "name": "ai_response",
+              "value": "={{ $('Webhook - GetMait Chat').item.json.message === '__INIT_CHAT__' ? 'Hej! Velkommen til ' + $json.store_name + '! 😊 Hvad kan jeg hjælpe dig med i dag? Vil du høre om vores pizza, se menuen, eller er du klar til at bestille?' : 'Hejsa Mait! 🍕\\n\\nJeg modtog din besked: \"' + $('Webhook - GetMait Chat').item.json.message + '\"\\n\\nMenu fra ' + $json.store_name + ' er hentet! Vi har ' + ($json.menu_json.split('\"id\"').length - 1) + ' retter klar.\\n\\n**TEST MODE:** Denne n8n workflow kører uden AI lige nu.\\n\\nFor at aktivere AI:\\n1. Tilføj en OpenAI/Anthropic node efter \"Prepare AI Context\"\\n2. Brug prompt\\'en fra Note\\'n\\n3. Send menu_json og user_message til AI\\'en\\n\\nSkal jeg hjælpe dig videre med din bestilling?' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "simple-response",
+      "name": "Simple Response (TEST)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ {\n  \"output\": $json.ai_response,\n  \"store_id\": $('Webhook - GetMait Chat').item.json.store_id,\n  \"timestamp\": $now,\n  \"source\": \"n8n_webhook\"\n} }}",
+        "options": {}
+      },
+      "id": "respond-webhook",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "content": "=## GETMAIT CHAT WORKFLOW\n\n### Flow:\n1. **Webhook** receives chat message\n2. **Fetch Menu** from Supabase (filters by store_id)\n3. **Prepare Context** for AI\n4. **Simple Response** (TEST - replace with AI)\n5. **Respond** back to chat widget\n\n### To Enable AI:\nReplace \"Simple Response (TEST)\" node with:\n- OpenAI Chat Model node\n- Or Anthropic Claude node\n- Use the prompt from the Note\n\n### Webhook URL:\n{{ $execution.webhook.url }}",
+        "height": 340.23529411764693,
+        "width": 343.91764705882354
+      },
+      "id": "info-note",
+      "name": "Note - Workflow Info",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [240, 80]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook - GetMait Chat": {
+      "main": [
+        [
+          {
+            "node": "Fetch Menu from Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Menu from Supabase": {
+      "main": [
+        [
+          {
+            "node": "Prepare AI Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare AI Context": {
+      "main": [
+        [
+          {
+            "node": "Simple Response (TEST)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Response (TEST)": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "meta": {
+    "instanceId": "getmait-production"
+  },
+  "id": "getmait-chat-handler",
+  "tags": []
+}

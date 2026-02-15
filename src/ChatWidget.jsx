@@ -83,13 +83,8 @@ const ChatWidget = () => {
         const storeData = data[0];
         setStore(storeData);
 
-        // 5. Sæt velkomstbesked med restaurantens navn
-        setMessages([
-          {
-            role: 'assistant',
-            content: `Hejsa! Jeg er din personlige AI-Mait her hos ${storeData.name}. 🍕 Hvad drømmer din mave om i dag, Mait? Jeg er klar til at hjælpe dig med din bestilling direkte her i chatten!`
-          }
-        ]);
+        // 5. Ingen hardcoded velkomstbesked - vi henter den fra n8n i stedet
+        setMessages([]);
 
         setIsLoadingStore(false);
       } catch (error) {
@@ -101,6 +96,64 @@ const ChatWidget = () => {
 
     fetchStoreData();
   }, [SUPABASE_URL, SUPABASE_ANON_KEY]);
+
+  /**
+   * Hent welcome message fra n8n når chat åbnes første gang
+   */
+  useEffect(() => {
+    const fetchWelcomeMessage = async () => {
+      if (!isOpen || !store || messages.length > 0 || isLoading) return;
+
+      // Generer eller hent session ID
+      let sessionId = sessionStorage.getItem(`getmait_session_${store.id}`);
+      if (!sessionId) {
+        sessionId = `${store.id}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        sessionStorage.setItem(`getmait_session_${store.id}`, sessionId);
+      }
+
+      setIsLoading(true);
+
+      try {
+        const response = await fetch(N8N_CHAT_WEBHOOK, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            message: '__INIT_CHAT__', // Special flag for n8n to detect first message
+            store_id: store.id,
+            store_name: store.name,
+            source: 'web_chat_init',
+            sessionId: sessionId,
+            timestamp: new Date().toISOString()
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        // Tilføj welcome message fra n8n
+        setMessages([{
+          role: 'assistant',
+          content: data.reply || data.output || data.message || "Hej! Velkommen til Napoli Pizza! 😊 Hvad kan jeg hjælpe dig med i dag?"
+        }]);
+      } catch (error) {
+        console.error('[GetMait Widget] Error fetching welcome message:', error);
+        // Fallback welcome message hvis n8n ikke svarer
+        setMessages([{
+          role: 'assistant',
+          content: `Hej! Velkommen til ${store.name}! 😊 Hvad kan jeg hjælpe dig med i dag?`
+        }]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchWelcomeMessage();
+  }, [isOpen, store, messages.length, N8N_CHAT_WEBHOOK]);
 
   /**
    * Auto-scroll til bunden når nye beskeder kommer
