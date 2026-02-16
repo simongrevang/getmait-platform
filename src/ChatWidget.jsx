@@ -23,6 +23,20 @@ const ChatWidget = () => {
   const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZSIsImlhdCI6MTc3MDI4NjgwMCwiZXhwIjo0OTI1OTYwNDAwLCJyb2xlIjoiYW5vbiJ9.Lshy9-QNUcZhFol6_zI6yinhWak7nmkd03rMs94-viE";
   const N8N_CHAT_WEBHOOK = "https://n8n.getmait.dk/webhook/getmait-chat";
 
+  /**
+   * Sanitize webhook response to prevent template strings from being displayed
+   * Detects n8n template syntax like ={{ }} or {{}} and returns fallback instead
+   */
+  const sanitizeReply = (text, fallback) => {
+    if (!text || typeof text !== 'string') return fallback;
+    // Detect template strings: ={{, {{, $json., $node
+    if (text.includes('={{') || text.includes('$json.') || text.includes('$node') || text.match(/^\{\{.*\}\}$/)) {
+      console.warn('[GetMait Widget] Template string detected in reply, using fallback:', text);
+      return fallback;
+    }
+    return text;
+  };
+
   // --- STATE ---
   const [isOpen, setIsOpen] = useState(false);
   const [store, setStore] = useState(null);
@@ -135,10 +149,14 @@ const ChatWidget = () => {
 
         const data = await response.json();
 
-        // Tilføj welcome message fra n8n
+        // Tilføj welcome message fra n8n (saniteret for at undgå template strings)
+        const welcomeMessage = sanitizeReply(
+          data.reply || data.output || data.message,
+          `Hej! Velkommen til ${store.name}! 😊 Hvad kan jeg hjælpe dig med i dag?`
+        );
         setMessages([{
           role: 'assistant',
-          content: data.reply || data.output || data.message || "Hej! Velkommen til Napoli Pizza! 😊 Hvad kan jeg hjælpe dig med i dag?"
+          content: welcomeMessage
         }]);
       } catch (error) {
         console.error('[GetMait Widget] Error fetching welcome message:', error);
@@ -209,10 +227,14 @@ const ChatWidget = () => {
 
       const data = await response.json();
 
-      // Tilføj n8n's svar til chat
+      // Tilføj n8n's svar til chat (saniteret for at undgå template strings)
+      const replyMessage = sanitizeReply(
+        data.reply || data.output || data.message,
+        "Tak for din besked! Vi behandler din forespørgsel."
+      );
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: data.reply || data.output || data.message || "Modtaget! Jeg sender din bestilling til køkkenet nu."
+        content: replyMessage
       }]);
     } catch (error) {
       console.error('[GetMait Widget] Error sending message:', error);
