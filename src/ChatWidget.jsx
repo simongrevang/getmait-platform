@@ -156,10 +156,30 @@ const ChatWidget = () => {
 
       const data = await response.json();
 
+      // Ekstraher AI-svar fra n8n response
+      // n8n kan returnere forskellige formater afhængigt af workflow-opsætning:
+      //   - { output: "..." }           → Simpel AI Agent
+      //   - { svar: "..." }             → Structured Output Parser
+      //   - { output: "```json\n{...}\n```" } → Markdown-wrapped JSON
+      let aiResponse = data.output || data.svar || data.message;
+
+      // Hvis output er markdown-wrapped JSON, forsøg at parse og udtrække svar-felt
+      if (typeof aiResponse === 'string' && aiResponse.includes('```')) {
+        try {
+          const jsonMatch = aiResponse.match(/```(?:json)?\s*([\s\S]*?)```/);
+          if (jsonMatch) {
+            const parsed = JSON.parse(jsonMatch[1].trim());
+            aiResponse = parsed.svar || parsed.output || parsed.message || aiResponse;
+          }
+        } catch (_) {
+          // Behold original string hvis parsing fejler
+        }
+      }
+
       // Tilføj n8n's svar til chat
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: data.output || data.message || "Modtaget! Jeg sender din bestilling til køkkenet nu."
+        content: aiResponse || "Modtaget! Jeg sender din bestilling til køkkenet nu."
       }]);
     } catch (error) {
       console.error('[GetMait Widget] Error sending message:', error);
