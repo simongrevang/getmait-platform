@@ -127,12 +127,16 @@ const ChatWidget = () => {
 
       setIsLoading(true);
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
       try {
         const response = await fetch(N8N_CHAT_WEBHOOK, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
+          signal: controller.signal,
           body: JSON.stringify({
             message: '__INIT_CHAT__', // Special flag for n8n to detect first message
             store_id: store.id,
@@ -143,15 +147,22 @@ const ChatWidget = () => {
           }),
         });
 
+        clearTimeout(timeoutId);
+
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const data = await response.json();
+        const rawReply = data.reply || data.output || data.message || data.text || data.response;
+
+        if (!rawReply) {
+          console.warn('[GetMait Widget] n8n welcome: tomt output-felt. Fuld respons:', JSON.stringify(data));
+        }
 
         // Tilføj welcome message fra n8n (saniteret for at undgå template strings)
         const welcomeMessage = sanitizeReply(
-          data.reply || data.output || data.message,
+          rawReply,
           `Hej! Velkommen til ${store.name}! 😊 Hvad kan jeg hjælpe dig med i dag?`
         );
         setMessages([{
@@ -159,6 +170,7 @@ const ChatWidget = () => {
           content: welcomeMessage
         }]);
       } catch (error) {
+        clearTimeout(timeoutId);
         console.error('[GetMait Widget] Error fetching welcome message:', error);
         // Fallback welcome message hvis n8n ikke svarer
         setMessages([{
@@ -197,6 +209,10 @@ const ChatWidget = () => {
     setInput('');
     setIsLoading(true);
 
+    // Timeout efter 20 sekunder
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 20000);
+
     try {
       // Generer eller hent session ID fra sessionStorage (persisterer per browser session)
       let sessionId = sessionStorage.getItem(`getmait_session_${store.id}`);
@@ -211,6 +227,7 @@ const ChatWidget = () => {
         headers: {
           'Content-Type': 'application/json'
         },
+        signal: controller.signal,
         body: JSON.stringify({
           message: currentInput,
           store_id: store.id,        // VIGTIGT: Så n8n ved hvilken restaurant
@@ -221,26 +238,38 @@ const ChatWidget = () => {
         }),
       });
 
+      clearTimeout(timeoutId);
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
+      const rawReply = data.reply || data.output || data.message || data.text || data.response;
+
+      if (!rawReply) {
+        console.warn('[GetMait Widget] n8n svarede men uden forventet output-felt. Fuld respons:', JSON.stringify(data));
+        throw new Error('n8n returnerede tomt svar - tjek workflow AI-noden');
+      }
 
       // Tilføj n8n's svar til chat (saniteret for at undgå template strings)
       const replyMessage = sanitizeReply(
-        data.reply || data.output || data.message,
-        "Tak for din besked! Vi behandler din forespørgsel."
+        rawReply,
+        "Hov, Mait! Jeg kunne ikke behandle dit spørgsmål. Prøv igen eller ring til os på " + store.contact_phone
       );
       setMessages(prev => [...prev, {
         role: 'assistant',
         content: replyMessage
       }]);
     } catch (error) {
+      clearTimeout(timeoutId);
+      const isTimeout = error.name === 'AbortError';
       console.error('[GetMait Widget] Error sending message:', error);
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: "Hov, Mait! Jeg mistede forbindelsen til ovnen. Prøv venligst igen eller giv os et kald på " + store.contact_phone
+        content: isTimeout
+          ? `Hov, Mait! Det tog for lang tid at svare. Prøv igen eller ring til os på ${store.contact_phone}`
+          : `Hov, Mait! Jeg mistede forbindelsen til ovnen. Prøv venligst igen eller giv os et kald på ${store.contact_phone}`
       }]);
     } finally {
       setIsLoading(false);
