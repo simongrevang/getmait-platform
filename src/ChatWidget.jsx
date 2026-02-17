@@ -161,7 +161,7 @@ const ChatWidget = () => {
       //   - { output: "..." }           → Simpel AI Agent
       //   - { svar: "..." }             → Structured Output Parser
       //   - { output: "```json\n{...}\n```" } → Markdown-wrapped JSON
-      let aiResponse = data.output || data.svar || data.message;
+      let aiResponse = data.output || data.svar || data.reply || data.message;
 
       // Hvis output er markdown-wrapped JSON, forsøg at parse og udtrække svar-felt
       if (typeof aiResponse === 'string' && aiResponse.includes('```')) {
