@@ -110,7 +110,7 @@
           "assignments": [
             {
               "id": "test-response",
-              "name": "ai_response",
+              "name": "reply",
               "value": "={{ $('Webhook - GetMait Chat').item.json.message === '__INIT_CHAT__' ? 'Hej! Velkommen til ' + $json.store_name + '! 😊 Hvad kan jeg hjælpe dig med i dag? Vil du høre om vores pizza, se menuen, eller er du klar til at bestille?' : 'Hejsa Mait! 🍕\\n\\nJeg modtog din besked: \"' + $('Webhook - GetMait Chat').item.json.message + '\"\\n\\nMenu fra ' + $json.store_name + ' er hentet! Vi har ' + ($json.menu_json.split('\"id\"').length - 1) + ' retter klar.\\n\\n**TEST MODE:** Denne n8n workflow kører uden AI lige nu.\\n\\nFor at aktivere AI:\\n1. Tilføj en OpenAI/Anthropic node efter \"Prepare AI Context\"\\n2. Brug prompt\\'en fra Note\\'n\\n3. Send menu_json og user_message til AI\\'en\\n\\nSkal jeg hjælpe dig videre med din bestilling?' }}",
               "type": "string"
             }
@@ -127,7 +127,7 @@
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ {\n  \"output\": $json.ai_response,\n  \"store_id\": $('Webhook - GetMait Chat').item.json.store_id,\n  \"timestamp\": $now,\n  \"source\": \"n8n_webhook\"\n} }}",
+        "responseBody": "={{ {\n  \"reply\": $json.reply,\n  \"output\": $json.reply,\n  \"store_id\": $('Webhook - GetMait Chat').item.json.store_id,\n  \"timestamp\": $now,\n  \"source\": \"n8n_webhook\"\n} }}",
         "options": {}
       },
       "id": "respond-webhook",
@@ -196,7 +196,7 @@
       ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
     "executionOrder": "v1"
   },
