@@ -73,7 +73,7 @@ const ChatWidget = () => {
 
         // 3. Fetch store data fra Supabase
         const response = await fetch(
-          `${SUPABASE_URL}/rest/v1/stores?slug=eq.${slug}&select=id,name,primary_color,contact_phone,city&is_open=eq.true`,
+          `${SUPABASE_URL}/rest/v1/stores?subdomain=eq.${slug}&select=id,name,primary_color,contact_phone,phone_number,city`,
           {
             headers: {
               'apikey': SUPABASE_ANON_KEY,
@@ -240,7 +240,7 @@ const ChatWidget = () => {
       console.error('[GetMait Widget] Error sending message:', error);
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: "Hov, Mait! Jeg mistede forbindelsen til ovnen. Prøv venligst igen eller giv os et kald på " + store.contact_phone
+        content: "Hov, Mait! Jeg mistede forbindelsen til ovnen. Prøv venligst igen eller giv os et kald på " + (store.phone_number || store.contact_phone)
       }]);
     } finally {
       setIsLoading(false);
@@ -348,7 +348,7 @@ const ChatWidget = () => {
           {/* KONTAKT BAR (DYNAMISK FRA SUPABASE) */}
           <div className="bg-slate-50 px-6 py-5 flex justify-around border-b border-slate-100 shadow-inner">
             <a
-              href={`tel:${store.contact_phone}`}
+              href={`tel:${store.phone_number || store.contact_phone}`}
               className="flex flex-col items-center gap-1.5 group"
               aria-label={`Ring til ${store.name}`}
             >
@@ -358,7 +358,7 @@ const ChatWidget = () => {
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover:text-slate-600">Ring</span>
             </a>
             <a
-              href={`sms:${store.contact_phone}`}
+              href={`sms:${store.phone_number || store.contact_phone}`}
               className="flex flex-col items-center gap-1.5 group"
               aria-label={`Send SMS til ${store.name}`}
             >

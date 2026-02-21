@@ -49,7 +49,7 @@ const App = () => {
         const { data: storeData, error: storeError } = await supabase
           .from('stores')
           .select('*')
-          .eq('slug', slug)
+          .eq('subdomain', slug)
           .single();
 
         if (storeError) {
@@ -134,7 +134,7 @@ const App = () => {
           <div className="flex items-center gap-6">
              <div className="hidden sm:flex flex-col items-end text-right">
                 <span className="text-[10px] font-black uppercase text-slate-400 italic leading-none mb-1 tracking-widest">Spørg din Mait</span>
-                <a href={`tel:${store.contact_phone}`} className="text-sm font-extrabold text-slate-900 tracking-tight italic">{store.contact_phone}</a>
+                <a href={`tel:${store.phone_number || store.contact_phone}`} className="text-sm font-extrabold text-slate-900 tracking-tight italic">{store.phone_number || store.contact_phone}</a>
              </div>
             <button className="bg-slate-900 text-white px-6 py-2.5 rounded-full font-bold text-sm shadow-xl active:scale-95 transition-transform">Bestil nu</button>
           </div>
@@ -156,7 +156,7 @@ const App = () => {
           </p>
           <div className="flex flex-col gap-4 text-left">
             <a
-              href={`tel:${store.contact_phone}`}
+              href={`tel:${store.phone_number || store.contact_phone}`}
               style={{ backgroundColor: brandColor }}
               className="text-white px-10 py-5 rounded-[24px] font-bold flex items-center justify-center gap-3 shadow-2xl transition-all hover:brightness-110 active:scale-95 text-lg group w-full sm:w-auto text-left"
             >
@@ -164,7 +164,7 @@ const App = () => {
               <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
             </a>
             <a
-              href={`sms:${store.contact_phone}`}
+              href={`sms:${store.phone_number || store.contact_phone}`}
               className="bg-white border-2 border-slate-200 text-slate-800 px-10 py-5 rounded-[24px] font-bold flex items-center justify-center gap-3 shadow-sm transition-all hover:bg-slate-50 active:scale-95 text-lg w-full sm:w-auto text-left"
             >
               <MessageSquare size={22} /> Send SMS Bestilling
@@ -311,7 +311,7 @@ const App = () => {
 
           <div className="flex flex-col md:flex-row justify-center gap-8 text-slate-500 text-[10px] font-black uppercase tracking-[0.2em] italic text-center">
             <div className="flex items-center justify-center gap-2 text-center italic"><MapPin size={14} /> {store.address}</div>
-            <div className="flex items-center justify-center gap-2 text-center italic"><Phone size={14} /> Direkte: {store.contact_phone}</div>
+            <div className="flex items-center justify-center gap-2 text-center italic"><Phone size={14} /> Direkte: {store.phone_number || store.contact_phone}</div>
           </div>
 
           <div className="pt-12 border-t border-slate-800 text-center">
